@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pitaka</title>
+<meta name="theme-color" content="#4B5BD6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pitaka">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#EEF0FB; --surface:#FFFFFF; --ink:#1D2340; --muted:#646A8A; --line:#D9DCF0;
+  --primary:#4B5BD6; --primary-ink:#FFFFFF; --good:#23A57B; --amber:#E39B2F; --danger:#D6405A; --track:#DFE2F6;
+  --k-cash:#23A57B; --k-bank:#4B5BD6; --k-digital:#9A5BD6; --k-ewallet:#1E9BD7;
+  --display:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display",system-ui,-apple-system,Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12152A; --surface:#1B2040; --ink:#EDEFFF; --muted:#9CA2C8; --line:#2C3260;
+    --primary:#7D8BFF; --primary-ink:#12152A; --good:#3CCB98; --amber:#F2B04A; --danger:#FF6B82; --track:#262B52;
+    --k-cash:#3CCB98; --k-bank:#7D8BFF; --k-digital:#C08BFF; --k-ewallet:#4FC3F7;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12152A; --surface:#1B2040; --ink:#EDEFFF; --muted:#9CA2C8; --line:#2C3260;
+  --primary:#7D8BFF; --primary-ink:#12152A; --good:#3CCB98; --amber:#F2B04A; --danger:#FF6B82; --track:#262B52;
+  --k-cash:#3CCB98; --k-bank:#7D8BFF; --k-digital:#C08BFF; --k-ewallet:#4FC3F7;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:20px 18px 48px}
+h1,h2,.num{font-family:var(--display)}
+header.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+header.top h1{font-size:1.35rem;margin:0;font-weight:800}
+.ghost{background:none;border:none;color:var(--muted);font:inherit;font-size:.9rem;cursor:pointer;padding:6px 8px;border-radius:8px}
+.ghost:hover{color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.hidden{display:none!important}
+
+/* Hero */
+.hero{padding:4px 2px 18px}
+.hero .label{color:var(--muted);font-size:.95rem;margin:0 0 2px}
+.balance{font-size:clamp(2.6rem,12vw,4.2rem);font-weight:800;line-height:1;letter-spacing:-.03em;margin:0}
+.balance .peso{font-size:.55em;font-weight:700;vertical-align:.45em;margin-right:4px;opacity:.7}
+.balance.low{color:var(--danger)}
+.stack{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--track);margin:16px 0 10px;gap:2px}
+.stack span{display:block;height:100%;transition:flex-grow .5s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem;color:var(--muted)}
+.legend b{color:var(--ink);font-weight:600}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.savedline{margin:10px 0 0;font-size:.9rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.stack span{transition:none}}
+
+.alert{background:color-mix(in srgb,var(--danger) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--danger) 45%,transparent);padding:12px 14px;border-radius:12px;margin:0 0 18px;font-size:.95rem;display:none}
+.alert.show{display:block}
+.alert strong{color:var(--danger)}
+
+.panel{background:var(--surface);border-radius:18px;padding:16px;border:1px solid var(--line)}
+.toggle{display:grid;grid-template-columns:repeat(3,1fr);background:var(--track);border-radius:12px;padding:4px;margin-bottom:12px}
+.toggle button{border:none;background:none;font:inherit;font-weight:600;font-size:.93rem;padding:9px 4px;border-radius:9px;color:var(--muted);cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(20,25,60,.15)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.field{flex:1 1 140px;display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:.85rem;color:var(--muted)}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+select{appearance:auto}
+input.amt{font-family:var(--display);font-weight:700;font-size:1.2rem}
+.primary{width:100%;margin-top:4px;border:none;background:var(--primary);color:var(--primary-ink);font:inherit;font-weight:700;font-size:1.05rem;padding:13px;border-radius:12px;cursor:pointer}
+.primary:hover{filter:brightness(1.07)}
+.primary.income{background:var(--good)}
+.err{color:var(--danger);font-size:.88rem;margin:4px 0 0;min-height:1em}
+.note{color:var(--muted);font-size:.88rem}
+
+h2{font-size:1.15rem;margin:0;font-weight:700}
+.shead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+.section{margin-bottom:26px}
+.small{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:.92rem;padding:9px 14px;border-radius:10px;cursor:pointer}
+.small:hover{border-color:var(--primary)}
+.small.solid{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+
+/* Accounts */
+.accts{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.accts li{border-top:1px solid var(--line)}
+.accts li:first-child{border-top:none}
+.accts button.acct{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:13px 14px;width:100%;cursor:pointer}
+.accts button.acct:hover{background:color-mix(in srgb,var(--primary) 6%,transparent)}
+.accts button.acct:focus-visible{outline:3px solid var(--primary);outline-offset:-3px}
+.badge{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:.8rem;color:#fff;flex:none;font-family:var(--display)}
+.amain{flex:1;min-width:0}
+.aname{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.akind{color:var(--muted);font-size:.82rem}
+.abal{font-family:var(--display);font-weight:700;white-space:nowrap}
+.abal.neg{color:var(--danger)}
+
+/* Goals */
+.goals{display:grid;gap:12px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.goal .gtop{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.goal .gname{font-weight:700;font-size:1.05rem}
+.goal .gpct{font-family:var(--display);font-weight:800;color:var(--good)}
+.gbar{height:10px;background:var(--track);border-radius:999px;margin:10px 0 6px;overflow:hidden}
+.gbar i{display:block;height:100%;background:var(--good);border-radius:999px;transition:width .5s}
+.gmeta{color:var(--muted);font-size:.88rem}
+.gmeta b{color:var(--ink);font-family:var(--display)}
+.gactions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.gactions .small{flex:1}
+.done{color:var(--good);font-weight:600}
+
+/* Chart */
+.chartbox{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 12px 10px}
+.chartbox svg{display:block;width:100%;height:auto}
+.chartsum{color:var(--muted);font-size:.9rem;margin:8px 4px 0}
+
+/* History */
+ul.hist{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+ul.hist li{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+ul.hist li:first-child{border-top:none}
+.hmain{flex:1;min-width:0}
+.hnote{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdate{color:var(--muted);font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hamt{font-family:var(--display);font-weight:700;white-space:nowrap}
+.hamt.in{color:var(--good)} .hamt.move{color:var(--muted)}
+.del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:4px 8px;border-radius:8px;line-height:1}
+.del:hover{color:var(--danger);background:var(--track)}
+.empty{color:var(--muted);text-align:center;padding:20px;background:var(--surface);border:1px dashed var(--line);border-radius:18px}
+.filter{max-width:190px;padding:7px 10px;font-size:.9rem}
+
+/* Setup */
+.setup h1{font-size:clamp(1.9rem,8vw,2.6rem);line-height:1.08;margin:20px 0 10px;font-weight:800;letter-spacing:-.02em}
+.setup > p{color:var(--muted);margin:0 0 20px}
+.setup .panel{margin-bottom:16px}
+
+/* Dialog */
+dialog{border:none;border-radius:20px;padding:0;width:min(92vw,440px);background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(10,15,40,.35)}
+dialog::backdrop{background:rgba(15,18,40,.5)}
+dialog form{padding:20px}
+dialog h3{font-family:var(--display);font-size:1.25rem;margin:0 0 14px}
+.dbtns{display:flex;gap:10px;margin-top:8px}
+.dbtns button{flex:1}
+.dextra{margin-top:14px;text-align:center}
+.linkdanger{background:none;border:none;color:var(--danger);font:inherit;font-size:.92rem;cursor:pointer;padding:6px}
+.foot{font-size:.8rem;color:var(--muted);text-align:center;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Setup -->
+  <section id="setup" class="setup hidden">
+    <h1>Let's count your money.</h1>
+    <p>Add your physical cash, then any banks and e-wallets you use. You can add more later.</p>
+    <div class="panel">
+      <div class="field" style="margin-bottom:0">
+        <label for="setupCash">Cash on hand (₱)</label>
+        <input id="setupCash" class="amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
+      </div>
+    </div>
+    <div class="shead"><h2>Banks & e-wallets</h2><button class="small" id="setupAddAcct">+ Add</button></div>
+    <div id="setupAccts" style="margin-bottom:16px"></div>
+    <p class="err" id="setupErr"></p>
+    <button class="primary" id="startBtn">Start tracking</button>
+  </section>
+
+  <!-- App -->
+  <main id="app" class="hidden">
+    <header class="top">
+      <h1>Pitaka</h1>
+      <button class="ghost" id="themeBtn" aria-label="Toggle dark mode">◐ Theme</button>
+    </header>
+
+    <section class="hero" aria-live="polite">
+      <p class="label">Total money</p>
+      <p class="balance num" id="balance"></p>
+      <div class="stack" id="stack" aria-hidden="true"></div>
+      <div class="legend" id="legend"></div>
+      <p class="savedline" id="savedLine"></p>
+    </section>
+
+    <div class="alert" id="alert" role="alert"></div>
+
+    <section class="section">
+      <div class="panel">
+        <div class="toggle" role="group" aria-label="Entry type">
+          <button data-t="out" aria-pressed="true">Expense</button>
+          <button data-t="in" aria-pressed="false">Add money</button>
+          <button data-t="transfer" aria-pressed="false">Transfer</button>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="amt">Amount (₱)</label>
+            <input id="amt" class="amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field" style="flex-basis:180px">
+            <label for="note">What for?</label>
+            <input id="note" type="text" maxlength="60" placeholder="Lunch, jeep fare, load…">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="acctSel" id="acctLbl">Paid with</label>
+            <select id="acctSel"></select>
+          </div>
+          <div class="field hidden" id="toWrap">
+            <label for="toSel">To</label>
+            <select id="toSel"></select>
+          </div>
+        </div>
+        <p class="err" id="err"></p>
+        <button class="primary" id="addBtn">Deduct expense</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shead"><h2>My money</h2><button class="small" id="addAcctBtn">+ Add account</button></div>
+      <ul class="accts" id="acctList"></ul>
+      <p class="note" style="margin:8px 4px 0">Tap an account to rename it or update its balance.</p>
+    </section>
+
+    <section class="section">
+      <div class="shead"><h2>Savings goals</h2><button class="small" id="addGoalBtn">+ New goal</button></div>
+      <div class="goals" id="goalList"></div>
+    </section>
+
+    <section class="section">
+      <div class="shead"><h2>Spending, last 14 days</h2></div>
+      <div class="chartbox"><div id="chart"></div></div>
+      <p class="chartsum" id="chartSum"></p>
+    </section>
+
+    <section class="section">
+      <div class="shead"><h2>History</h2><select id="histFilter" class="filter" aria-label="Filter history"></select></div>
+      <div id="histWrap"></div>
+    </section>
+
+    <section class="section">
+      <div class="shead"><h2>Low-balance warning</h2></div>
+      <div class="panel">
+        <div class="row" style="align-items:flex-end">
+          <div class="field" style="flex-basis:200px">
+            <label for="warnAmt">Warn me when my total drops to (₱)</label>
+            <input id="warnAmt" type="number" inputmode="decimal" min="0" step="1" placeholder="500">
+          </div>
+          <div class="field" style="flex:0 0 auto"><button class="small" id="warnBtn" style="padding:11px 16px">Save warning</button></div>
+        </div>
+        <p class="note" id="warnMsg" style="margin:0"></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shead"><h2>Backup</h2></div>
+      <div class="panel">
+        <p class="note" style="margin:0 0 12px">Your data lives only on this device. Save a backup file now and then so you don't lose it if you clear your browser or change phones.</p>
+        <div class="row">
+          <button class="small" id="exportBtn" style="flex:1">Save backup file</button>
+          <button class="small" id="importBtn" style="flex:1">Restore from backup</button>
+          <input type="file" id="importFile" accept="application/json,.json" class="hidden">
+        </div>
+        <p class="note" id="backupMsg" style="margin:8px 0 0"></p>
+      </div>
+    </section>
+
+    <div style="text-align:center"><button class="linkdanger" id="resetBtn">Start over (erase everything)</button></div>
+    <p class="foot">Saved on this device. Works offline.</p>
+  </main>
+</div>
+
+<dialog id="dlg"><form method="dialog" id="dlgForm" novalidate></form></dialog>
+
+<script>
+(() => {
+  const LS_KEY = 'pitaka-v1';
+
+  // ---------- Philippine providers ----------
+  const PROVIDERS = {
+    bank: ['BDO','BPI','Metrobank','Landbank','PNB','Security Bank','UnionBank','RCBC','China Bank','EastWest Bank','PSBank','AUB','DBP','Maybank','PBCOM','Bank of Commerce','CTBC Bank','Sterling Bank of Asia'],
+    digital: ['GoTyme Bank','Maya Bank','Tonik','CIMB Bank','SeaBank','UNObank','UnionDigital Bank','OFBank','GSave (GCash)','DiskarTech'],
+    ewallet: ['GCash','Maya','ShopeePay','GrabPay','Coins.ph','PayPal','Lazada Wallet','PalawanPay','ML Wallet','Starpay']
+  };
+  const KINDS = {
+    cash:{label:'Cash', plural:'Cash', color:'var(--k-cash)'},
+    bank:{label:'Bank', plural:'Banks', color:'var(--k-bank)'},
+    digital:{label:'Digital bank', plural:'Digital banks', color:'var(--k-digital)'},
+    ewallet:{label:'E-wallet', plural:'E-wallets', color:'var(--k-ewallet)'}
+  };
+  const KIND_ORDER = ['cash','bank','digital','ewallet'];
+
+  // ---------- State ----------
+  let state;
+  let entryType = 'out';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const r2 = n => Math.round(n*100)/100;
+  const fmt = n => Math.abs(n).toLocaleString('en-PH',{minimumFractionDigits: Math.abs(n) % 1 ? 2 : 0, maximumFractionDigits:2});
+  const peso = n => (n < 0 ? '−' : '') + '₱' + fmt(n);
+
+  function blank(){ return {v:2, started:false, accounts:[], goals:[], entries:[], warn:0}; }
+
+  function migrate(s){
+    if (!s || !Array.isArray(s.entries)) return blank();
+    if (s.v === 2) {
+      s.accounts ||= []; s.goals ||= []; if (typeof s.warn !== 'number') s.warn = 0;
+      return s;
+    }
+    // v1: single balance -> everything goes to Cash
+    const n = blank();
+    n.warn = typeof s.warn === 'number' ? s.warn : 0;
+    if (s.entries.length){
+      n.started = true;
+      n.accounts.push({id:'cash', name:'Cash', kind:'cash', provider:'Cash'});
+      n.entries = s.entries.map(e => ({...e, acct:'cash'}));
+    }
+    return n;
+  }
+  function load(){ try { return migrate(JSON.parse(localStorage.getItem(LS_KEY))); } catch(e){ return blank(); } }
+  function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} }
+
+  const activeAccts = () => state.accounts.filter(a => !a.hidden);
+  const activeGoals = () => state.goals.filter(g => !g.hidden);
+  const acctById = id => state.accounts.find(a => a.id === id);
+  const goalById = id => state.goals.find(g => g.id === id);
+  const sortedAccts = () => [...activeAccts()].sort((a,b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind));
+
+  function compute(){
+    const acc = {}, goal = {};
+    state.accounts.forEach(a => acc[a.id] = 0);
+    state.goals.forEach(g => goal[g.id] = 0);
+    for (const e of state.entries){
+      const A = e.amount;
+      switch(e.type){
+        case 'in': acc[e.acct] = (acc[e.acct]||0) + A; break;
+        case 'out': acc[e.acct] = (acc[e.acct]||0) - A; break;
+        case 'adjust': acc[e.acct] = (acc[e.acct]||0) + A; break;
+        case 'transfer': acc[e.acct] = (acc[e.acct]||0) - A; acc[e.to] = (acc[e.to]||0) + A; break;
+        case 'save': acc[e.acct] = (acc[e.acct]||0) - A; goal[e.goal] = (goal[e.goal]||0) + A; break;
+        case 'unsave': goal[e.goal] = (goal[e.goal]||0) - A; acc[e.acct] = (acc[e.acct]||0) + A; break;
+      }
+    }
+    for (const k in acc) acc[k] = r2(acc[k]);
+    for (const k in goal) goal[k] = r2(goal[k]);
+    const total = r2(activeAccts().reduce((s,a) => s + acc[a.id], 0));
+    const saved = r2(activeGoals().reduce((s,g) => s + goal[g.id], 0));
+    return {acc, goal, total, saved};
+  }
+
+  // ---------- Dialog helper ----------
+  function openDialog({title, html, submit='Save', onSubmit, danger, onOpen}){
+    const dlg = $('dlg'), form = $('dlgForm');
+    form.innerHTML = `<h3>${esc(title)}</h3>${html}<p class="err" id="dErr"></p>
+      <div class="dbtns"><button type="button" class="small" id="dCancel">Cancel</button><button type="submit" class="small solid">${esc(submit)}</button></div>
+      ${danger ? `<div class="dextra"><button type="button" class="linkdanger" id="dDanger">${esc(danger.label)}</button></div>` : ''}`;
+    form.onsubmit = ev => {
+      ev.preventDefault();
+      const msg = onSubmit(form);
+      if (msg) { $('dErr').textContent = msg; return; }
+      dlg.close();
+    };
+    $('dCancel').onclick = () => dlg.close();
+    if (danger) $('dDanger').onclick = () => { const m = danger.onClick(); if (m) $('dErr').textContent = m; else dlg.close(); };
+    dlg.showModal();
+    if (onOpen) onOpen(form);
+    const first = form.querySelector('input,select'); if (first) first.focus();
+  }
+
+  function providerOptions(kind, selected){
+    return PROVIDERS[kind].map(p => `<option ${p===selected?'selected':''}>${esc(p)}</option>`).join('') + `<option value="__other" ${selected && !PROVIDERS[kind].includes(selected) ? 'selected':''}>Other…</option>`;
+  }
+
+  function accountDialog(onCreated){
+    openDialog({
+      title:'Add bank or e-wallet',
+      submit:'Add account',
+      html:`
+        <div class="field"><label for="dKind">Type</label>
+          <select id="dKind"><option value="ewallet">E-wallet</option><option value="bank">Bank</option><option value="digital">Digital bank</option><option value="cash">Cash (another wallet)</option></select></div>
+        <div class="field" id="dProvWrap"><label for="dProv">Provider</label><select id="dProv"></select></div>
+        <div class="field hidden" id="dOtherWrap"><label for="dOther">Provider name</label><input id="dOther" maxlength="40" placeholder="e.g. Cooperative savings"></div>
+        <div class="field"><label for="dNick">Nickname (optional)</label><input id="dNick" maxlength="40" placeholder="e.g. Payroll, Ipon"></div>
+        <div class="field"><label for="dBal">Current balance (₱)</label><input id="dBal" class="amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>`,
+      onOpen(){
+        const sync = () => {
+          const k = $('dKind').value;
+          $('dProvWrap').classList.toggle('hidden', k==='cash');
+          if (k !== 'cash') $('dProv').innerHTML = providerOptions(k);
+          $('dOtherWrap').classList.toggle('hidden', k==='cash' || $('dProv').value !== '__other');
+        };
+        $('dKind').onchange = sync;
+        $('dProv').onchange = () => $('dOtherWrap').classList.toggle('hidden', $('dProv').value !== '__other');
+        sync();
+      },
+      onSubmit(){
+        const kind = $('dKind').value;
+        let provider = kind === 'cash' ? 'Cash' : $('dProv').value;
+        if (provider === '__other') provider = $('dOther').value.trim();
+        if (!provider) return 'Type the provider name.';
+        const nick = $('dNick').value.trim();
+        if (kind === 'cash' && !nick) return 'Give this cash wallet a nickname, like "Ipon jar".';
+        const bal = parseFloat($('dBal').value) || 0;
+        if (bal < 0) return 'Balance can\'t be negative.';
+        const name = nick ? (kind==='cash' ? nick : `${provider} · ${nick}`) : provider;
+        const a = {id:uid(), name, kind, provider};
+        state.accounts.push(a);
+        if (bal > 0) state.entries.push({id:uid(), type:'in', amount:r2(bal), note:'Starting balance', acct:a.id, ts:Date.now()});
+        save(); onCreated && onCreated(a);
+      }
+    });
+  }
+
+  function editAccountDialog(a){
+    const {acc} = compute();
+    openDialog({
+      title: a.name,
+      submit:'Save changes',
+      html:`
+        <p class="note" style="margin:-6px 0 14px">${esc(KINDS[a.kind].label)} · current balance <b>${peso(acc[a.id])}</b></p>
+        <div class="field"><label for="eName">Name</label><input id="eName" maxlength="50" value="${esc(a.name)}"></div>
+        <div class="field"><label for="eBal">Actual balance right now (₱)</label><input id="eBal" class="amt" type="number" inputmode="decimal" step="0.01" value="${acc[a.id]}"></div>
+        <p class="note" style="margin:-4px 0 6px">Changing the balance adds a "Balance update" entry so it matches your real app or wallet.</p>`,
+      onSubmit(){
+        const name = $('eName').value.trim();
+        if (!name) return 'Give the account a name.';
+        const nb = parseFloat($('eBal').value);
+        if (isNaN(nb)) return 'Enter the balance as a number.';
+        a.name = name;
+        const diff = r2(nb - acc[a.id]);
+        if (diff !== 0) state.entries.push({id:uid(), type:'adjust', amount:diff, note:'Balance update', acct:a.id, ts:Date.now()});
+        save(); render();
+      },
+      danger: a.id === 'cash' ? null : {label:'Remove this account', onClick(){
+        if (acc[a.id] !== 0) return `Move or spend its ${peso(acc[a.id])} first, or set its balance to 0.`;
+        if (!confirm(`Remove ${a.name}? Its past entries stay in your history.`)) return 'Not removed.';
+        a.hidden = true; save(); render();
+      }}
+    });
+  }
+
+  function goalDialog(g){
+    const {goal} = compute();
+    openDialog({
+      title: g ? 'Edit goal' : 'New savings goal',
+      submit: g ? 'Save changes' : 'Create goal',
+      html:`
+        <div class="field"><label for="gName">What are you saving for?</label><input id="gName" maxlength="40" placeholder="New laptop, emergency fund…" value="${esc(g?.name||'')}"></div>
+        <div class="field"><label for="gTarget">Target amount (₱)</label><input id="gTarget" class="amt" type="number" inputmode="decimal" min="1" step="1" placeholder="10000" value="${g?.target||''}"></div>
+        <div class="field"><label for="gDate">Target date (optional)</label><input id="gDate" type="date" value="${g?.date||''}"></div>`,
+      onSubmit(){
+        const name = $('gName').value.trim(), target = parseFloat($('gTarget').value), date = $('gDate').value;
+        if (!name) return 'Name your goal.';
+        if (!(target > 0)) return 'Set a target amount greater than 0.';
+        if (g){ Object.assign(g, {name, target:r2(target), date}); }
+        else state.goals.push({id:uid(), name, target:r2(target), date});
+        save(); render();
+      },
+      danger: g ? {label:'Delete goal', onClick(){
+        if (goal[g.id] > 0) return `Take out the ${peso(goal[g.id])} saved first.`;
+        if (!confirm(`Delete "${g.name}"?`)) return 'Not deleted.';
+        g.hidden = true; save(); render();
+      }} : null
+    });
+  }
+
+  function goalMoneyDialog(g, mode){
+    const {acc, goal} = compute();
+    const opts = sortedAccts().map(a => `<option value="${a.id}">${esc(a.name)} — ${peso(acc[a.id])}</option>`).join('');
+    openDialog({
+      title: mode==='save' ? `Save for ${g.name}` : `Take out of ${g.name}`,
+      submit: mode==='save' ? 'Add to goal' : 'Take out',
+      html:`
+        <div class="field"><label for="mAmt">Amount (₱)</label><input id="mAmt" class="amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
+        <div class="field"><label for="mAcct">${mode==='save' ? 'Take the money from' : 'Put the money back in'}</label><select id="mAcct">${opts}</select></div>
+        ${mode==='unsave' ? `<p class="note" style="margin:-4px 0 6px">Saved so far: <b>${peso(goal[g.id])}</b></p>` : ''}`,
+      onSubmit(){
+        const amt = parseFloat($('mAmt').value), a = $('mAcct').value;
+        if (!(amt > 0)) return 'Enter an amount greater than 0.';
+        if (mode==='save' && amt > acc[a]) return `${acctById(a).name} only has ${peso(acc[a])}.`;
+        if (mode==='unsave' && amt > goal[g.id]) return `This goal only has ${peso(goal[g.id])} saved.`;
+        state.entries.push({id:uid(), type:mode, amount:r2(amt), note:g.name, acct:a, goal:g.id, ts:Date.now()});
+        save(); render();
+      }
+    });
+  }
+
+  // ---------- Screens ----------
+  function showScreen(){
+    $('setup').classList.toggle('hidden', state.started);
+    $('app').classList.toggle('hidden', !state.started);
+    if (state.started) render(); else renderSetup();
+  }
+
+  function renderSetup(){
+    const {acc} = compute();
+    const list = activeAccts().filter(a => a.id !== 'cash');
+    $('setupAccts').innerHTML = list.length
+      ? `<ul class="accts">${list.map(a => acctRow(a, acc[a.id], false)).join('')}</ul>`
+      : '<div class="empty">No banks or e-wallets yet. Tap + Add for GCash, BDO, Maya, and others.</div>';
+  }
+
+  function badge(a){
+    const t = a.kind==='cash' ? '₱' : a.provider.replace(/[^A-Za-z0-9]/g,'').slice(0,2).toUpperCase();
+    return `<span class="badge" style="background:${KINDS[a.kind].color}">${esc(t)}</span>`;
+  }
+  function acctRow(a, bal, clickable=true){
+    const inner = `${badge(a)}<span class="amain"><span class="aname" style="display:block">${esc(a.name)}</span><span class="akind">${esc(KINDS[a.kind].label)}</span></span><span class="abal ${bal<0?'neg':''}">${peso(bal)}</span>`;
+    return clickable ? `<li><button class="acct" data-id="${a.id}">${inner}</button></li>` : `<li><div class="acct" style="display:flex;align-items:center;gap:12px;padding:13px 14px">${inner}</div></li>`;
+  }
+
+  function render(){
+    const {acc, goal, total, saved} = compute();
+    const warn = state.warn || 0;
+    const low = warn > 0 && total <= warn;
+
+    const bal = $('balance');
+    bal.innerHTML = `<span class="peso">${total<0?'−₱':'₱'}</span>${fmt(total)}`;
+    bal.classList.toggle('low', low || total < 0);
+
+    // breakdown by kind
+    const byKind = {};
+    for (const a of activeAccts()) byKind[a.kind] = (byKind[a.kind]||0) + acc[a.id];
+    const kinds = KIND_ORDER.filter(k => byKind[k] !== undefined);
+    $('stack').innerHTML = kinds.map(k => `<span style="flex-grow:${Math.max(0,byKind[k])};background:${KINDS[k].color}"></span>`).join('');
+    $('legend').innerHTML = kinds.map(k => `<span><span class="dot" style="background:${KINDS[k].color}"></span>${KINDS[k].plural} <b>${peso(r2(byKind[k]))}</b></span>`).join('');
+    $('savedLine').textContent = saved > 0 ? `Plus ${peso(saved)} set aside in savings goals.` : '';
+
+    const alert = $('alert');
+    if (total < 0){ alert.innerHTML = `<strong>You're over budget.</strong> Your accounts are ${peso(-total)} short.`; alert.classList.add('show'); }
+    else if (low){ alert.innerHTML = `<strong>Low balance.</strong> You're down to ${peso(total)}, at or below your ${peso(warn)} warning.`; alert.classList.add('show'); }
+    else alert.classList.remove('show');
+
+    // accounts
+    $('acctList').innerHTML = sortedAccts().map(a => acctRow(a, acc[a.id])).join('');
+    $('acctList').querySelectorAll('button.acct').forEach(b => b.onclick = () => editAccountDialog(acctById(b.dataset.id)));
+
+    // goals
+    const gs = activeGoals();
+    $('goalList').innerHTML = gs.length ? gs.map(g => {
+      const s = goal[g.id], pct = Math.min(100, Math.round(s / g.target * 100));
+      const left = r2(Math.max(0, g.target - s));
+      let pace = '';
+      if (left > 0 && g.date){
+        const days = Math.ceil((new Date(g.date+'T23:59:59') - new Date()) / 864e5);
+        if (days > 0){ const weeks = Math.max(1, days/7); pace = ` · save about <b>${peso(Math.ceil(left/weeks))}</b>/week to hit it by ${new Date(g.date+'T00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}`; }
+        else pace = ' · target date has passed';
+      }
+      return `<div class="goal">
+        <div class="gtop"><span class="gname">${esc(g.name)}</span><span class="gpct">${pct}%</span></div>
+        <div class="gbar"><i style="width:${pct}%"></i></div>
+        <div class="gmeta"><b>${peso(s)}</b> of ${peso(g.target)}${left>0 ? ` · ${peso(left)} to go` : ` · <span class="done">Goal reached!</span>`}${pace}</div>
+        <div class="gactions">
+          <button class="small solid" data-g="${g.id}" data-a="save">Add money</button>
+          <button class="small" data-g="${g.id}" data-a="unsave" ${s<=0?'disabled':''}>Take out</button>
+          <button class="small" data-g="${g.id}" data-a="edit">Edit</button>
+        </div></div>`;
+    }).join('') : '<div class="empty">No goals yet. Create one for something you\'re saving up for.</div>';
+    $('goalList').querySelectorAll('button[data-g]').forEach(b => b.onclick = () => {
+      const g = goalById(b.dataset.g);
+      if (b.dataset.a === 'edit') goalDialog(g); else goalMoneyDialog(g, b.dataset.a);
+    });
+
+    fillSelects(acc);
+    if (document.activeElement !== $('warnAmt')) $('warnAmt').value = warn || '';
+    renderChart();
+    renderHistory();
+  }
+
+  function fillSelects(acc){
+    const opts = sortedAccts().map(a => `<option value="${a.id}">${esc(a.name)} — ${peso(acc[a.id])}</option>`).join('');
+    for (const id of ['acctSel','toSel']){
+      const sel = $(id), prev = sel.value;
+      sel.innerHTML = opts;
+      if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+    }
+    if (entryType==='transfer' && $('toSel').value === $('acctSel').value && $('toSel').options.length > 1){
+      $('toSel').selectedIndex = $('acctSel').selectedIndex === 0 ? 1 : 0;
+    }
+    const f = $('histFilter'), fp = f.value;
+    f.innerHTML = '<option value="">All money</option>' + state.accounts.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('') + (state.goals.length ? '<option value="__goals">Savings goals</option>' : '');
+    if ([...f.options].some(o => o.value === fp)) f.value = fp;
+  }
+
+  const dayKey = ts => { const d = new Date(ts); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); };
+
+  function renderChart(){
+    const days = [], today = new Date(); today.setHours(0,0,0,0);
+    for (let i=13;i>=0;i--){ const d = new Date(today); d.setDate(d.getDate()-i); days.push({d, key:dayKey(d), total:0}); }
+    const map = Object.fromEntries(days.map(x => [x.key, x]));
+    for (const e of state.entries) if (e.type==='out'){ const k = dayKey(e.ts); if (map[k]) map[k].total += e.amount; }
+    const max = Math.max(...days.map(x => x.total), 1);
+    const W=560,H=190,padB=28,padT=22,gap=6, bw=(W-gap*13)/14;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily spending for the last 14 days"><line x1="0" x2="${W}" y1="${H-padB}" y2="${H-padB}" stroke="var(--line)"/>`;
+    days.forEach((x,i) => {
+      const h = x.total>0 ? Math.max(3,(x.total/max)*(H-padB-padT)) : 0, X = i*(bw+gap), Y = H-padB-h, isToday = i===13;
+      if (h>0){
+        svg += `<rect x="${X}" y="${Y}" width="${bw}" height="${h}" rx="6" fill="${isToday?'var(--primary)':'color-mix(in srgb, var(--primary) 45%, var(--track))'}"><title>${x.d.toLocaleDateString('en-PH',{month:'short',day:'numeric'})}: ${peso(r2(x.total))}</title></rect>`;
+        if (x.total === max) svg += `<text x="${Math.min(W-20,Math.max(20,X+bw/2))}" y="${Y-6}" text-anchor="middle" font-size="12" font-family="system-ui,sans-serif" fill="var(--muted)">${peso(Math.round(x.total))}</text>`;
+      }
+      const lbl = isToday ? 'Today' : (i%2===1 ? x.d.getDate() : '');
+      svg += `<text x="${Math.min(W-18,X+bw/2)}" y="${H-9}" text-anchor="middle" font-size="12" font-family="system-ui,sans-serif" fill="var(--muted)" font-weight="${isToday?600:400}">${lbl}</text>`;
+    });
+    $('chart').innerHTML = svg + '</svg>';
+    const t = days.reduce((a,x) => a+x.total, 0);
+    $('chartSum').textContent = t > 0 ? `${peso(r2(t))} spent in 14 days, about ${peso(Math.round(t/14))} a day.` : 'No expenses in the last 14 days yet.';
+  }
+
+  function describe(e){
+    const A = id => acctById(id)?.name || 'Removed account';
+    const G = id => goalById(id)?.name || 'Removed goal';
+    switch(e.type){
+      case 'in': return {title: e.note || 'Added money', sub: A(e.acct), sign:'+', cls:'in'};
+      case 'out': return {title: e.note || 'Expense', sub: A(e.acct), sign:'−', cls:''};
+      case 'adjust': return {title: 'Balance update', sub: A(e.acct), sign: e.amount>=0?'+':'−', cls:'move'};
+      case 'transfer': return {title: e.note || 'Transfer', sub: `${A(e.acct)} → ${A(e.to)}`, sign:'', cls:'move'};
+      case 'save': return {title: `Saved for ${G(e.goal)}`, sub: `From ${A(e.acct)}`, sign:'', cls:'move'};
+      case 'unsave': return {title: `Took out of ${G(e.goal)}`, sub: `Into ${A(e.acct)}`, sign:'', cls:'move'};
+    }
+  }
+
+  function renderHistory(){
+    const f = $('histFilter').value;
+    let list = [...state.entries].sort((a,b) => b.ts - a.ts);
+    if (f === '__goals') list = list.filter(e => e.goal);
+    else if (f) list = list.filter(e => e.acct === f || e.to === f);
+    const wrap = $('histWrap');
+    if (!list.length){ wrap.innerHTML = '<div class="empty">No entries yet.</div>'; return; }
+    list = list.slice(0, 200);
+    wrap.innerHTML = '<ul class="hist">' + list.map(e => {
+      const d = describe(e);
+      const when = new Date(e.ts).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      return `<li><div class="hmain"><div class="hnote">${esc(d.title)}</div><div class="hdate">${esc(d.sub)} · ${when}</div></div>
+        <div class="hamt ${d.cls}">${d.sign}${peso(Math.abs(e.amount)).replace('−','')}</div>
+        <button class="del" data-id="${e.id}" aria-label="Delete ${esc(d.title)}">×</button></li>`;
+    }).join('') + '</ul>';
+    wrap.querySelectorAll('.del').forEach(b => b.onclick = () => {
+      const e = state.entries.find(x => x.id === b.dataset.id), d = describe(e);
+      if (!confirm(`Delete "${d.title}" (${peso(Math.abs(e.amount))})? Balances will be adjusted.`)) return;
+      state.entries = state.entries.filter(x => x.id !== e.id);
+      save(); render();
+    });
+  }
+
+  // ---------- Entry form ----------
+  const LABELS = {
+    out:{btn:'Deduct expense', acct:'Paid with', ph:'Lunch, jeep fare, load…'},
+    in:{btn:'Add money', acct:'Add to', ph:'Allowance, sahod, payback…'},
+    transfer:{btn:'Transfer money', acct:'From', ph:'ATM withdrawal, cash-in…'}
+  };
+  function setType(t){
+    entryType = t;
+    document.querySelectorAll('.toggle button').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
+    $('addBtn').textContent = LABELS[t].btn;
+    $('addBtn').classList.toggle('income', t==='in');
+    $('acctLbl').textContent = LABELS[t].acct;
+    $('note').placeholder = LABELS[t].ph;
+    $('toWrap').classList.toggle('hidden', t!=='transfer');
+    $('err').textContent = '';
+    if (state.started) fillSelects(compute().acc);
+  }
+  document.querySelectorAll('.toggle button').forEach(b => b.onclick = () => setType(b.dataset.t));
+
+  function addEntry(){
+    const amt = parseFloat($('amt').value), acct = $('acctSel').value, to = $('toSel').value;
+    const {acc} = compute();
+    if (!(amt > 0)){ $('err').textContent = 'Enter an amount greater than 0.'; $('amt').focus(); return; }
+    if (!acct){ $('err').textContent = 'Add an account first.'; return; }
+    if (entryType === 'transfer'){
+      if (acct === to){ $('err').textContent = 'Choose two different accounts.'; return; }
+      if (amt > acc[acct] && !confirm(`${acctById(acct).name} only has ${peso(acc[acct])}. Transfer anyway?`)) return;
+    }
+    if (entryType === 'out' && amt > acc[acct] && !confirm(`${acctById(acct).name} only has ${peso(acc[acct])}. Log this expense anyway?`)) return;
+    const e = {id:uid(), type:entryType, amount:r2(amt), note:$('note').value.trim(), acct, ts:Date.now()};
+    if (entryType === 'transfer') e.to = to;
+    state.entries.push(e);
+    $('amt').value = ''; $('note').value = ''; $('err').textContent = '';
+    save(); render(); $('amt').focus();
+  }
+  $('addBtn').onclick = addEntry;
+  ['amt','note'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') addEntry(); }));
+  $('acctSel').onchange = () => { if (entryType==='transfer') fillSelects(compute().acc); };
+  $('histFilter').onchange = renderHistory;
+
+  // ---------- Setup ----------
+  $('setupAddAcct').onclick = () => accountDialog(renderSetup);
+  $('startBtn').onclick = () => {
+    const cash = parseFloat($('setupCash').value) || 0;
+    if (cash < 0){ $('setupErr').textContent = 'Cash can\'t be negative.'; return; }
+    if (!acctById('cash')) state.accounts.unshift({id:'cash', name:'Cash', kind:'cash', provider:'Cash'});
+    if (cash > 0) state.entries.push({id:uid(), type:'in', amount:r2(cash), note:'Starting cash', acct:'cash', ts:Date.now()});
+    state.started = true;
+    $('setupCash').value = ''; $('setupErr').textContent = '';
+    save(); showScreen();
+  };
+
+  // ---------- Other controls ----------
+  $('addAcctBtn').onclick = () => accountDialog(() => render());
+  $('addGoalBtn').onclick = () => goalDialog(null);
+  $('warnBtn').onclick = () => {
+    const v = parseFloat($('warnAmt').value);
+    state.warn = v > 0 ? Math.round(v) : 0;
+    $('warnMsg').textContent = state.warn ? `You'll be warned when your total is ${peso(state.warn)} or below.` : 'Warning turned off.';
+    save(); render();
+  };
+  $('exportBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'), d = new Date();
+    a.href = URL.createObjectURL(blob);
+    a.download = `pitaka-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    $('backupMsg').textContent = 'Backup saved to your downloads.';
+  };
+  $('importBtn').onclick = () => $('importFile').click();
+  $('importFile').onchange = async ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    try{
+      const data = JSON.parse(await f.text());
+      if (!data || !Array.isArray(data.entries)) throw 0;
+      if (!confirm('Replace your current data with this backup?')) return;
+      state = migrate(data); state.started = true;
+      save(); showScreen();
+      $('backupMsg').textContent = 'Backup restored.';
+    }catch(err){ $('backupMsg').textContent = "That file isn't a Pitaka backup. Choose a file named pitaka-backup-….json."; }
+    ev.target.value = '';
+  };
+  $('resetBtn').onclick = () => {
+    if (!confirm('Erase all accounts, goals, and history? This can\'t be undone.')) return;
+    state = blank(); save(); showScreen();
+  };
+  $('themeBtn').onclick = () => {
+    const root = document.documentElement;
+    const cur = root.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    root.dataset.theme = cur === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('pitaka-theme', root.dataset.theme); } catch(e){}
+  };
+  try { const t = localStorage.getItem('pitaka-theme'); if (t) document.documentElement.dataset.theme = t; } catch(e){}
+
+  // ---------- Boot ----------
+  state = load();
+  showScreen();
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+})();
+</script>
+</body>
+</html>
